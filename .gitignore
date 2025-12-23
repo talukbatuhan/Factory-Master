@@ -1,0 +1,16 @@
+# Windows
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Node / Python
+node_modules/
+__pycache__/
+.env
+
+# Build / output
+dist/
+build/
