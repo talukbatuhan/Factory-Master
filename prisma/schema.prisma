@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("OPERATOR") // ADMIN, ENGINEER, OPERATOR
+  status       String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  files        PartFile[]
+  transactions InventoryTransaction[]
+  orders       ProductionOrder[]
+}
+
+model Part {
+  id            String   @id @default(uuid())
+  partNumber    String   @unique
+  name          String
+  description   String?
+  type          String   @default("COMPONENT") // PRODUCT, ASSEMBLY, COMPONENT, RAW_MATERIAL
+  materialType  String?  // Steel, Aluminum, Plastic, etc.
+  stockQuantity Int      @default(0)
+  unit          String   @default("pcs") // pcs, kg, m, L
+  reorderLevel  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // BOM Relations (Self-referencing)
+  bomParent     BOMItem[] @relation("BomParent") // Items where this part is the parent (Assembly)
+  bomChildren   BOMItem[] @relation("BomChild")  // Items where this part is the child (Component)
+
+  // Other Relations
+  revisions     PartRevision[]
+  files         PartFile[]
+  supplierParts SupplierPart[]
+  process       Process?       // 1-to-1: A part has one manufacturing process
+  productionOrders ProductionOrder[]
+  transactions  InventoryTransaction[]
+}
+
+model PartRevision {
+  id          String   @id @default(uuid())
+  partId      String
+  revision    String   // A, B, C, 1.0, 1.1
+  description String?
+  changeLog   String?
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  
+  part        Part     @relation(fields: [partId], references: [id])
+}
+
+model BOMItem {
+  id              String   @id @default(uuid())
+  partId          String   // Parent Part ID
+  componentPartId String   // Child Part ID
+  quantity        Float
+  unit            String   @default("pcs")
+  
+  part            Part     @relation("BomParent", fields: [partId], references: [id])
+  componentPart   Part     @relation("BomChild", fields: [componentPartId], references: [id])
+
+  @@unique([partId, componentPartId])
+}
+
+model PartFile {
+  id           String   @id @default(uuid())
+  partId       String
+  fileName     String
+  filePath     String
+  originalPath String?
+  fileType     String   // PDF, DXF, STEP, IMAGE, OTHER
+  fileSize     Int?
+  revision     String?
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+
+  part         Part     @relation(fields: [partId], references: [id])
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+}
+
+model Process {
+  id          String   @id @default(uuid())
+  partId      String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  part        Part     @relation(fields: [partId], references: [id])
+  steps       ProcessStep[]
+}
+
+model ProcessStep {
+  id          String   @id @default(uuid())
+  processId   String
+  order       Int
+  name        String
+  description String?
+  machine     String?
+  setupTime   Int?     // minutes
+  cycleTime   Int?     // minutes
+  
+  process     Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+}
+
+model Supplier {
+  id            String   @id @default(uuid())
+  name          String
+  type          String   @default("LOCAL") // LOCAL, ONLINE
+  contactPerson String?
+  email         String?
+  phone         String?
+  website       String?
+  address       String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  supplierParts SupplierPart[]
+}
+
+model SupplierPart {
+  id           String   @id @default(uuid())
+  supplierId   String
+  partId       String
+  supplierSKU  String?
+  unitPrice    Float?
+  currency     String   @default("USD") // USD, EUR, TRY
+  leadTimeDays Int?
+  minOrderQty  Int      @default(1)
+  
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  part         Part     @relation(fields: [partId], references: [id])
+
+  @@unique([supplierId, partId])
+}
+
+model ProductionOrder {
+  id             String   @id @default(uuid())
+  orderNumber    String   @unique // PO-000001
+  partId         String
+  quantity       Int
+  status         String   @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  startDate      DateTime?
+  targetDate     DateTime?
+  completionDate DateTime?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+
+  part           Part     @relation(fields: [partId], references: [id])
+  createdBy      User?    @relation(fields: [createdById], references: [id])
+}
+
+model InventoryTransaction {
+  id           String   @id @default(uuid())
+  partId       String
+  type         String   // IN, OUT, ADJUSTMENT, CONSUMPTION, PRODUCTION
+  quantity     Int
+  balanceAfter Int
+  referenceId  String?  // Order ID, etc.
+  notes        String?
+  recordedById String?
+  createdAt    DateTime @default(now())
+
+  part         Part     @relation(fields: [partId], references: [id])
+  recordedBy   User?    @relation(fields: [recordedById], references: [id])
+}

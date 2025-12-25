@@ -1,0 +1,371 @@
+{
+    "nav": {
+        "dashboard": "Ana Sayfa",
+        "inventory": "Envanter",
+        "bom": "Malzeme Listesi",
+        "production": "Üretim",
+        "suppliers": "Tedarikçiler",
+        "processes": "Süreçler",
+        "reports": "Raporlar",
+        "settings": "Ayarlar",
+        "settingsHeader": "AYARLAR",
+        "profile": "Profil",
+        "users": "Kullanıcı Yönetimi",
+        "system": "Sistem Ayarları"
+    },
+    "common": {
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "delete": "Sil",
+        "edit": "Düzenle",
+        "add": "Ekle",
+        "new": "Yeni",
+        "search": "Ara",
+        "filter": "Filtrele",
+        "export": "Dışa Aktar",
+        "import": "İçe Aktar",
+        "loading": "Yükleniyor...",
+        "saving": "Kaydediliyor...",
+        "noData": "Veri bulunamadı",
+        "confirm": "Emin misiniz?",
+        "success": "Başarılı",
+        "error": "Hata",
+        "logout": "Çıkış Yap",
+        "back": "Geri",
+        "next": "İleri",
+        "viewAll": "Tümünü Gör",
+        "actions": "İşlemler",
+        "details": "Detaylar",
+        "close": "Kapat",
+        "refresh": "Yenile",
+        "submit": "Gönder",
+        "create": "Oluştur",
+        "update": "Güncelle",
+        "status": "Durum",
+        "total": "Toplam",
+        "min": "Min",
+        "max": "Maks",
+        "overview": "Genel Bakış",
+        "files": "Dosyalar",
+        "history": "Geçmiş"
+    },
+    "auth": {
+        "title": "FactoryMaster",
+        "subtitle": "Devam etmek için giriş yapın",
+        "email": "E-posta",
+        "password": "Şifre",
+        "signIn": "Giriş Yap",
+        "signingIn": "Giriş yapılıyor...",
+        "demoCredentials": "Demo Kullanıcı Bilgileri:",
+        "engineer": "Mühendis",
+        "operator": "Operatör",
+        "emailPlaceholder": "engineer@factory.com",
+        "passwordPlaceholder": "••••••••"
+    },
+    "dashboard": {
+        "title": "Ana Sayfa",
+        "loadingDashboard": "Ana sayfa yükleniyor...",
+        "welcomeMessage": "Fabrikanza bugün neler oluyor.",
+        "greetings": {
+            "morning": "Günaydın",
+            "afternoon": "İyi günler",
+            "evening": "İyi akşamlar"
+        },
+        "kpi": {
+            "totalParts": "Toplam Parça",
+            "lowStockAlerts": "Düşük Stok Uyarıları",
+            "productionOrders": "Üretim Siparişleri",
+            "completionRate": "Tamamlanma Oranı",
+            "clickToView": "Envanteri görüntülemek için tıklayın",
+            "itemsNeedReordering": "Ürün yeniden sipariş edilmeli",
+            "inProgress": "devam ediyor",
+            "ordersCompleted": "sipariş tamamlandı"
+        },
+        "sections": {
+            "lowStockItems": "Düşük Stoklu Ürünler",
+            "recentOrders": "Son Üretim Siparişleri",
+            "noRecentOrders": "Son sipariş yok"
+        }
+    },
+    "inventory": {
+        "title": "Envanter Yönetimi",
+        "addPart": "Parça Ekle",
+        "editPart": "Parça Düzenle",
+        "newPart": "Yeni Parça",
+        "partDetails": "Parça Detayları",
+        "totalParts": "Toplam Parça",
+        "inStock": "Stokta",
+        "lowStock": "Düşük Stok",
+        "outOfStock": "Stok Yok",
+        "partNumber": "Parça Numarası",
+        "partName": "Parça Adı",
+        "name": "İsim",
+        "description": "Açıklama",
+        "stockQuantity": "Stok Miktarı",
+        "reorderLevel": "Yeniden Sipariş Seviyesi",
+        "type": "Tip",
+        "unit": "Birim",
+        "location": "Konum",
+        "cost": "Maliyet",
+        "price": "Fiyat",
+        "supplier": "Tedarikçi",
+        "category": "Kategori",
+        "materialType": "Malzeme Tipi",
+        "specifications": "Özellikler",
+        "adjustStock": "Stok Ayarla",
+        "stockHistory": "Stok Geçmişi",
+        "supplierInfo": "Tedarikçi Bilgisi",
+        "types": {
+            "RAW_MATERIAL": "Ham Madde",
+            "COMPONENT": "Bileşen",
+            "ASSEMBLY": "Montaj",
+            "PRODUCT": "Bitmiş Ürün"
+        },
+        "units": {
+            "PIECE": "Adet",
+            "KG": "Kilogram",
+            "METER": "Metre",
+            "LITER": "Litre",
+            "BOX": "Kutu"
+        }
+    },
+    "bom": {
+        "title": "Malzeme Listesi",
+        "bomTree": "Malzeme Ağacı",
+        "selectPart": "Malzeme listesini görmek için parça seçin",
+        "selectPartPlaceholder": "Bir ürün veya montaj seçin",
+        "selectPartTitle": "Parça Seçilmedi",
+        "selectPartDesc": "BOM'unu görüntülemek ve yönetmek için açılır menüden bir ürün veya montaj seçin",
+        "components": "Bileşenler",
+        "quantity": "Miktar",
+        "addComponent": "Bileşen Ekle",
+        "removeComponent": "Bileşen Kaldır",
+        "noComponents": "Bu BOM'da bileşen yok",
+        "totalCost": "Toplam Maliyet",
+        "expandAll": "Tümünü Genişlet",
+        "collapseAll": "Tümünü Daralt"
+    },
+    "production": {
+        "title": "Üretim Siparişleri",
+        "newOrder": "Yeni Sipariş",
+        "orderDetails": "Sipariş Detayları",
+        "orderNumber": "Sipariş No",
+        "quantity": "Miktar",
+        "status": "Durum",
+        "targetDate": "Hedef Tarih",
+        "startDate": "Başlangıç Tarihi",
+        "completionDate": "Tamamlanma Tarihi",
+        "assignedTo": "Atanan",
+        "priority": "Öncelik",
+        "notes": "Notlar",
+        "timeline": "Zaman Çizelgesi",
+        "materials": "Gerekli Malzemeler",
+        "progress": "İlerleme",
+        "statuses": {
+            "PLANNED": "Planlandı",
+            "IN_PROGRESS": "Devam Ediyor",
+            "COMPLETED": "Tamamlandı",
+            "CANCELLED": "İptal Edildi",
+            "ON_HOLD": "Beklemede"
+        },
+        "priorities": {
+            "LOW": "Düşük",
+            "MEDIUM": "Orta",
+            "HIGH": "Yüksek",
+            "URGENT": "Acil"
+        }
+    },
+    "suppliers": {
+        "title": "Tedarikçiler",
+        "addSupplier": "Tedarikçi Ekle",
+        "supplierDetails": "Tedarikçi Detayları",
+        "name": "İsim",
+        "contactPerson": "İletişim Kişisi",
+        "email": "E-posta",
+        "phone": "Telefon",
+        "address": "Adres",
+        "website": "Web Sitesi",
+        "taxId": "Vergi No",
+        "total": "Toplam Tedarikçi",
+        "totalSuppliers": "Toplam Tedarikçi",
+        "active": "Aktif",
+        "inactive": "Pasif",
+        "rating": "Değerlendirme",
+        "leadTime": "Teslimat Süresi",
+        "paymentTerms": "Ödeme Koşulları",
+        "suppliedParts": "Tedarik Edilen Parçalar",
+        "types": {
+            "LOCAL": "Yerel",
+            "INTERNATIONAL": "Uluslararası",
+            "ONLINE": "Online"
+        }
+    },
+    "processes": {
+        "title": "Süreçler",
+        "addProcess": "Süreç Ekle",
+        "processName": "Süreç Adı",
+        "duration": "Süre",
+        "machine": "Makine",
+        "operators": "Operatörler",
+        "cost": "Birim Maliyet",
+        "steps": "Adımlar",
+        "materials": "Kullanılan Malzemeler"
+    },
+    "reports": {
+        "title": "Raporlar",
+        "generate": "Rapor Oluştur",
+        "inventoryReport": "Envanter Raporu",
+        "productionReport": "Üretim Raporu",
+        "supplierReport": "Tedarikçi Performansı",
+        "costAnalysis": "Maliyet Analizi",
+        "dateRange": "Tarih Aralığı",
+        "from": "Başlangıç",
+        "to": "Bitiş",
+        "downloadPDF": "PDF İndir",
+        "downloadExcel": "Excel İndir",
+        "print": "Yazdır",
+        "completedOrders": "Tamamlanan Siparişler",
+        "ordersInProgress": "Devam Eden Siparişler",
+        "criticalStockLevel": "Kritik Stok Seviyesi",
+        "currentMinLevel": "Mevcut / Min Seviye"
+    },
+    "settings": {
+        "title": "Ayarlar",
+        "users": {
+            "title": "Kullanıcı Yönetimi",
+            "addUser": "Kullanıcı Ekle",
+            "editUser": "Kullanıcı Düzenle",
+            "username": "Kullanıcı Adı",
+            "role": "Rol",
+            "status": "Durum",
+            "lastLogin": "Son Giriş",
+            "createdAt": "Oluşturulma Tarihi",
+            "roles": {
+                "ADMIN": "Yönetici",
+                "ENGINEER": "Mühendis",
+                "OPERATOR": "Operatör"
+            },
+            "statuses": {
+                "ACTIVE": "Aktif",
+                "INACTIVE": "Pasif"
+            }
+        },
+        "profile": {
+            "title": "Profil",
+            "personalInfo": "Kişisel Bilgiler",
+            "changePassword": "Şifre Değiştir",
+            "currentPassword": "Mevcut Şifre",
+            "newPassword": "Yeni Şifre",
+            "confirmPassword": "Şifre Tekrar",
+            "updateProfile": "Profili Güncelle"
+        },
+        "system": {
+            "title": "Sistem Ayarları",
+            "general": "Genel",
+            "language": "Dil",
+            "theme": "Tema",
+            "notifications": "Bildirimler",
+            "backup": "Yedekleme ve Geri Yükleme",
+            "database": "Veritabanı",
+            "themes": {
+                "light": "Açık Mod",
+                "dark": "Koyu Mod"
+            },
+            "languages": {
+                "en": "İngilizce",
+                "tr": "Türkçe"
+            }
+        }
+    },
+    "messages": {
+        "loginSuccess": "Giriş başarılı!",
+        "loginFailed": "Giriş başarısız",
+        "logoutSuccess": "Çıkış yapıldı",
+        "saveSuccess": "Başarıyla kaydedildi",
+        "saveFailed": "Kaydetme başarısız",
+        "deleteSuccess": "Başarıyla silindi",
+        "deleteFailed": "Silme başarısız",
+        "deleteConfirm": "Bu öğeyi silmek istediğinizden emin misiniz?",
+        "updateSuccess": "Başarıyla güncellendi",
+        "updateFailed": "Güncelleme başarısız",
+        "createSuccess": "Başarıyla oluşturuldu",
+        "createFailed": "Oluşturma başarısız",
+        "loadFailed": "Veri yükleme başarısız",
+        "noChanges": "Kaydedilecek değişiklik yok",
+        "invalidInput": "Lütfen girdiğinizi kontrol edin",
+        "requiredFields": "Lütfen tüm gerekli alanları doldurun",
+        "operationFailed": "İşlem başarısız",
+        "errorOccurred": "Bir hata oluştu"
+    },
+    "shortcuts": {
+        "title": "Klavye Kısayolları",
+        "description": "Bu klavye kısayollarıyla verimliliğinizi artırın",
+        "tip": "Bu diyalogu açmak için ? tuşuna basın",
+        "categories": {
+            "navigation": "Gezinme",
+            "actions": "Eylemler",
+            "general": "Genel"
+        },
+        "actions": {
+            "home": "Kontrol Paneline Git",
+            "inventory": "Envantere Git",
+            "bom": "Malzeme Listesine Git",
+            "production": "Üretim Emirlerine Git",
+            "new": "Yeni öğe oluştur",
+            "save": "Mevcut formu kaydet",
+            "find": "Sayfada ara",
+            "command": "Komut paletini aç",
+            "help": "Klavye kısayollarını göster",
+            "close": "Diyalogları/pencereleri kapat"
+        }
+    },
+    "search": {
+        "placeholder": "Parça, sipariş, tedarikçi ara...",
+        "typeToSearch": "Tüm varlıklarda aramak için yazın",
+        "minChars": "En az 2 karakter gerekli",
+        "noResults": "Sonuç bulunamadı",
+        "resultsCount": "{{count}} sonuç",
+        "navigate": "Gezin",
+        "select": "Seç",
+        "close": "Kapat",
+        "categories": {
+            "parts": "Parçalar",
+            "orders": "Üretim Emirleri",
+            "suppliers": "Tedarikçiler"
+        }
+    },
+    "export": {
+        "export": "Dışa Aktar",
+        "exporting": "Aktarılıyor...",
+        "exportPDF": "PDF Olarak Aktar",
+        "exportExcel": "Excel Olarak Aktar",
+        "exportCSV": "CSV Olarak Aktar",
+        "print": "Yazdır",
+        "defaultTitle": "Veri Dışa Aktarma",
+        "success": "{{type}} dışa aktarma başarılı",
+        "failed": "Dışa aktarma başarısız: {{error}}"
+    },
+    "notifications": {
+        "title": "Bildirimler",
+        "noNotifications": "Bildirim yok",
+        "markAllRead": "Tümünü okundu işaretle",
+        "types": {
+            "LOW_STOCK": "Düşük Stok Uyarısı",
+            "ORDER_COMPLETE": "Sipariş Tamamlandı",
+            "ORDER_UPDATE": "Sipariş Güncellendi",
+            "PART_UPDATE": "Parça Güncellendi"
+        }
+    },
+    "time": {
+        "today": "Bugün",
+        "yesterday": "Dün",
+        "tomorrow": "Yarın",
+        "thisWeek": "Bu Hafta",
+        "lastWeek": "Geçen Hafta",
+        "thisMonth": "Bu Ay",
+        "lastMonth": "Geçen Ay",
+        "days": "Gün",
+        "hours": "Saat",
+        "minutes": "Dakika"
+    }
+}
