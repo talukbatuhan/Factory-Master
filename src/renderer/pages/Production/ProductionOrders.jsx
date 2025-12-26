@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/components/layout/MainLayout'
 import ExportButton from '@/components/ExportButton'
+import EmptyState from '@/components/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -150,9 +151,13 @@ export default function ProductionOrders() {
                         <p className="text-muted-foreground">{t('common.loading')}</p>
                     </div>
                 ) : orders.length === 0 ? (
-                    <div className="glass glass-border rounded-lg p-12 text-center">
-                        <p className="text-muted-foreground">{t('production.noOrders')}</p>
-                    </div>
+                    <EmptyState
+                        icon={Factory}
+                        title={t('production.noOrders')}
+                        description={t('production.noOrdersDescription')}
+                        action={() => navigate('/production/new')}
+                        actionLabel={t('production.newOrder')}
+                    />
                 ) : (
                     <div className="grid gap-4">
                         {orders.map((order) => (

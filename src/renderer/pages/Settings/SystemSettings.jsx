@@ -3,11 +3,12 @@ import MainLayout from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Settings, Database, Globe } from 'lucide-react'
+import { Settings, Database, Globe, Keyboard } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/context/ThemeContext'
 import { useSettings } from '@/context/SettingsContext'
+import { SHORTCUTS } from '@/hooks/useKeyboardShortcuts'
 
 export default function SystemSettings() {
     const { t, i18n } = useTranslation()
@@ -166,6 +167,58 @@ export default function SystemSettings() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Keyboard Shortcuts */}
+                    <Card className="border-border">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <Keyboard className="h-5 w-5 text-primary" />
+                                <CardTitle>Keyboard Shortcuts</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Available keyboard shortcuts for quick navigation and actions
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-6">
+                                {SHORTCUTS.map((category, idx) => (
+                                    <div key={idx} className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase text-muted-foreground">
+                                            {category.category === 'navigation' && 'Navigation'}
+                                            {category.category === 'actions' && 'Actions'}
+                                            {category.category === 'general' && 'General'}
+                                        </h4>
+                                        <div className="grid gap-2">
+                                            {category.shortcuts.map((shortcut, sidx) => (
+                                                <div
+                                                    key={sidx}
+                                                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                                                >
+                                                    <span className="text-sm">{shortcut.description}</span>
+                                                    <div className="flex gap-1">
+                                                        {shortcut.keys.map((key, kidx) => (
+                                                            <kbd
+                                                                key={kidx}
+                                                                className="px-2 py-1 text-xs font-semibold text-foreground bg-background border border-border rounded shadow-sm"
+                                                            >
+                                                                {key}
+                                                            </kbd>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                <p className="text-sm text-blue-600 dark:text-blue-400">
+                                    <strong>Tip:</strong> Press <kbd className="px-1.5 py-0.5 text-xs bg-background border border-border rounded">?</kbd> anytime to view all keyboard shortcuts
+                                </p>
                             </div>
                         </CardContent>
                     </Card>

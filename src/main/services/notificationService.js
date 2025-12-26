@@ -6,26 +6,7 @@ const prisma = getPrismaClient()
 // Check for low stock parts and create notifications
 async function checkLowStock() {
     try {
-        const lowStockParts = await prisma.part.findMany({
-            where: {
-                OR: [
-                    {
-                        stockQuantity: {
-                            lte: prisma.raw('reorderLevel')
-                        }
-                    }
-                ]
-            },
-            select: {
-                id: true,
-                name: true,
-                partNumber: true,
-                stockQuantity: true,
-                reorderLevel: true,
-            }
-        })
-
-        // Alternative: Use raw query for better compatibility
+        // Use raw query for better compatibility
         const parts = await prisma.$queryRaw`
             SELECT id, name, partNumber, stockQuantity, reorderLevel 
             FROM Part 

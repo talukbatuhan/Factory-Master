@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { ArrowLeft, Edit, Package, FileText, Truck, History, Plus, Trash2, GitBranch, TrendingUp, TrendingDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -42,6 +43,10 @@ export default function PartDetails() {
     // Stock Adjustment State
     const [showStockDialog, setShowStockDialog] = useState(false)
     const [stockFormData, setStockFormData] = useState({ type: 'IN', quantity: 0, notes: '' })
+
+    // Delete Confirmation State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     useEffect(() => {
         loadPartDetails()
@@ -282,6 +287,25 @@ export default function PartDetails() {
         }
     }
 
+    const handleDeletePart = async () => {
+        setIsDeleting(true)
+        try {
+            const result = await window.api.deletePart(id)
+            if (result.success) {
+                toast.success(t('inventory.partDeleted'))
+                navigate('/inventory')
+            } else {
+                toast.error(result.error || t('messages.deleteFailed'))
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error(t('messages.deleteFailed'))
+        } finally {
+            setIsDeleting(false)
+            setShowDeleteConfirm(false)
+        }
+    }
+
     if (loading) {
         return (
             <MainLayout title={t('inventory.partDetails')}>
@@ -318,6 +342,13 @@ export default function PartDetails() {
                     <Button onClick={() => navigate(`/inventory/${id}/edit`)}>
                         <Edit className="mr-2 h-4 w-4" />
                         {t('common.edit')}
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={() => setShowDeleteConfirm(true)}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {t('common.delete')}
                     </Button>
                 </>
             }
@@ -751,6 +782,19 @@ export default function PartDetails() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title={t('inventory.deletePart')}
+                description={t('inventory.deletePartConfirm', { name: part.name })}
+                confirmText={t('common.delete')}
+                cancelText={t('common.cancel')}
+                onConfirm={handleDeletePart}
+                variant="destructive"
+                loading={isDeleting}
+            />
         </MainLayout>
     )
 }

@@ -21,6 +21,7 @@ import ProductionOrders from './pages/Production/ProductionOrders'
 import OrderDetails from './pages/Production/OrderDetails'
 import SupplierList from './pages/Suppliers/SupplierList'
 import SupplierDetails from './pages/Suppliers/SupplierDetails'
+import SupplierForm from './pages/Suppliers/SupplierForm'
 import Processes from './pages/Processes/Processes'
 import UserManagement from './pages/Settings/UserManagement'
 import Profile from './pages/Settings/Profile'
@@ -126,10 +127,24 @@ function AppRoutes() {
                             </PageWrapper>
                         </ProtectedRoute>
                     } />
+                    <Route path="/suppliers/new" element={
+                        <ProtectedRoute>
+                            <PageWrapper>
+                                <SupplierForm />
+                            </PageWrapper>
+                        </ProtectedRoute>
+                    } />
                     <Route path="/suppliers/:id" element={
                         <ProtectedRoute>
                             <PageWrapper>
                                 <SupplierDetails />
+                            </PageWrapper>
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/suppliers/:id/edit" element={
+                        <ProtectedRoute>
+                            <PageWrapper>
+                                <SupplierForm />
                             </PageWrapper>
                         </ProtectedRoute>
                     } />
@@ -191,7 +206,16 @@ function App() {
                 <BrowserRouter>
                     <AuthProvider>
                         <AppRoutes />
-                        <Toaster />
+                        <Toaster
+                            position="top-right"
+                            expand={false}
+                            richColors
+                            closeButton
+                            toastOptions={{
+                                duration: 4000,
+                                className: 'toast-custom',
+                            }}
+                        />
                     </AuthProvider>
                 </BrowserRouter>
             </SettingsProvider>

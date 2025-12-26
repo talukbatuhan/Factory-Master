@@ -6,36 +6,31 @@ const prisma = new PrismaClient()
 async function main() {
     console.log('Seeding database...')
 
-    // Create users
-    const engineerPassword = await bcrypt.hash('password123', 10)
-    const operatorPassword = await bcrypt.hash('password123', 10)
+    // Create default ADMIN user
+    const adminPassword = await bcrypt.hash('admin123', 10)
 
-    const engineer = await prisma.user.upsert({
-        where: { email: 'engineer@factory.com' },
-        update: {},
+    const admin = await prisma.user.upsert({
+        where: { email: 'admin@factory.com' },
+        update: {
+            role: 'ADMIN',
+            passwordHash: adminPassword,
+        },
         create: {
-            email: 'engineer@factory.com',
-            name: 'John Engineer',
-            passwordHash: engineerPassword,
-            role: 'ENGINEER',
+            email: 'admin@factory.com',
+            name: 'Administrator',
+            passwordHash: adminPassword,
+            role: 'ADMIN',
             status: 'ACTIVE',
         },
     })
 
-    const operator = await prisma.user.upsert({
-        where: { email: 'operator@factory.com' },
-        update: {},
-        create: {
-            email: 'operator@factory.com',
-            name: 'Sarah Operator',
-            passwordHash: operatorPassword,
-            role: 'OPERATOR',
-            status: 'ACTIVE',
-        },
-    })
-
-    console.log('Created users:', { engineer, operator })
-    console.log('Seed complete!')
+    console.log('✅ Default admin user created/updated:')
+    console.log('   Email:', admin.email)
+    console.log('   Password: admin123')
+    console.log('   Role:', admin.role)
+    console.log('')
+    console.log('🚀 Seed complete! You can now login with:')
+    console.log('   admin@factory.com / admin123')
 }
 
 main()

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/components/layout/MainLayout'
 import DataTable from '@/components/DataTable'
 import ExportButton from '@/components/ExportButton'
+import EmptyState from '@/components/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -168,9 +169,17 @@ export default function SupplierList() {
 
                 {/* Table */}
                 {loading ? (
-                    <div className="glass glass-border rounded-lg p-12 text-center">
+                    <div className="border border-border rounded-lg p-12 text-center">
                         <p className="text-muted-foreground">{t('common.loading')}</p>
                     </div>
+                ) : suppliers.length === 0 ? (
+                    <EmptyState
+                        icon={Truck}
+                        title={t('suppliers.noSuppliers')}
+                        description={t('suppliers.noSuppliersDescription')}
+                        action={() => navigate('/suppliers/new')}
+                        actionLabel={t('suppliers.addSupplier')}
+                    />
                 ) : (
                     <DataTable
                         columns={columns}

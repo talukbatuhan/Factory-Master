@@ -60,10 +60,17 @@ Active task checklist tracking progress through Sprint 1:
 - ✅ Processes page (hook added)
 - ⏭️ Settings pages (3 remaining)
 
-**Next Focus:**
-- UI/UX professional enhancement
-- Prisma error prevention
-- Language/theme persistence
+## 🔑 Default Login
+
+After seeding the database, use these credentials:
+
+```
+Email:    admin@factory.com
+Password: admin123
+Role:     ADMIN
+```
+
+**Note:** Change the password after first login from Settings → Profile.
 
 ---
 

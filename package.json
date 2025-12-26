@@ -88,5 +88,8 @@
     "win": {
       "target": "nsis"
     }
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
