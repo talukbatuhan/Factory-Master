@@ -69,6 +69,16 @@ export const AuthProvider = ({ children }) => {
         return roleHierarchy[user.role] >= roleHierarchy[requiredRole]
     }
 
+    const checkSetupNeeded = async () => {
+        try {
+            const result = await window.api.checkSetupNeeded()
+            return result // returns true if setup needed
+        } catch (error) {
+            console.error('Setup check error:', error)
+            return false
+        }
+    }
+
     return (
         <AuthContext.Provider
             value={{
@@ -78,6 +88,7 @@ export const AuthProvider = ({ children }) => {
                 login,
                 logout,
                 hasPermission,
+                checkSetupNeeded,
             }}
         >
             {children}

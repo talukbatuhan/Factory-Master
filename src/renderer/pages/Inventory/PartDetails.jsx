@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { ArrowLeft, Edit, Package, FileText, Truck, History, Plus, Trash2, GitBranch, TrendingUp, TrendingDown } from 'lucide-react'
+import BOMTreeViewer from '@/components/BOMTreeViewer'
+import { ArrowLeft, Edit, Package, FileText, Truck, History, Plus, Trash2, GitBranch, TrendingUp, TrendingDown, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
@@ -48,9 +49,21 @@ export default function PartDetails() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
+    // Supplier Assignment State
+    const [showSupplierDialog, setShowSupplierDialog] = useState(false)
+    const [supplierFormData, setSupplierFormData] = useState({
+        supplierId: '',
+        supplierSKU: '',
+        unitPrice: '',
+        leadTimeDays: '',
+        productUrl: ''
+    })
+    const [availableSuppliers, setAvailableSuppliers] = useState([])
+
     useEffect(() => {
         loadPartDetails()
         loadAvailableParts()
+        loadAllSuppliers()
     }, [id])
 
     const loadPartDetails = async () => {
@@ -126,6 +139,44 @@ export default function PartDetails() {
             }
         } catch (error) {
             console.error(error)
+        }
+    }
+
+    const loadAllSuppliers = async () => {
+        try {
+            const result = await window.api.getAllSuppliers({})
+            if (result.success) {
+                setAvailableSuppliers(result.suppliers)
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    const handleAssignSupplier = async () => {
+        try {
+            const result = await window.api.assignPartToSupplier(
+                supplierFormData.supplierId,
+                id,
+                {
+                    supplierSKU: supplierFormData.supplierSKU,
+                    unitPrice: supplierFormData.unitPrice ? parseFloat(supplierFormData.unitPrice) : null,
+                    leadTimeDays: supplierFormData.leadTimeDays ? parseInt(supplierFormData.leadTimeDays) : null,
+                    productUrl: supplierFormData.productUrl || null
+                }
+            )
+
+            if (result.success) {
+                toast.success('Supplier assigned successfully')
+                setShowSupplierDialog(false)
+                setSupplierFormData({ supplierId: '', supplierSKU: '', unitPrice: '', leadTimeDays: '', productUrl: '' })
+                loadSuppliers()
+            } else {
+                toast.error(result.error || 'Failed to assign supplier')
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error('Failed to assign supplier')
         }
     }
 
@@ -470,61 +521,27 @@ export default function PartDetails() {
 
                     {/* BOM Tab */}
                     <TabsContent value="bom">
-                        <Card className="glass glass-border">
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <CardTitle>Bill of Materials</CardTitle>
-                                    <Button onClick={() => setShowBOMDialog(true)} size="sm">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Component
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                {bom.length === 0 ? (
-                                    <p className="text-center text-muted-foreground py-8">No components in BOM</p>
-                                ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Component</TableHead>
-                                                <TableHead>Part Number</TableHead>
-                                                <TableHead>Quantity</TableHead>
-                                                <TableHead>Unit</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {bom.map((item) => (
-                                                <TableRow key={item.id}>
-                                                    <TableCell className="font-medium">{item.componentPart?.name}</TableCell>
-                                                    <TableCell className="font-mono text-sm">{item.componentPart?.partNumber}</TableCell>
-                                                    <TableCell className="font-mono">{item.quantity}</TableCell>
-                                                    <TableCell>{item.unit}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleRemoveBOMComponent(item.componentPartId)}
-                                                            className="text-red-500 hover:text-red-600"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <BOMTreeViewer
+                            partId={id}
+                            onItemClick={(clickedPart) => {
+                                if (clickedPart && clickedPart.id !== id) {
+                                    navigate(`/inventory/${clickedPart.id}`)
+                                }
+                            }}
+                        />
                     </TabsContent>
 
                     {/* Suppliers Tab */}
                     <TabsContent value="suppliers">
                         <Card className="glass glass-border">
                             <CardHeader>
-                                <CardTitle>Suppliers</CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle>Suppliers</CardTitle>
+                                    <Button onClick={() => setShowSupplierDialog(true)} size="sm">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Assign Supplier
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {suppliers.length === 0 ? (
@@ -532,20 +549,46 @@ export default function PartDetails() {
                                 ) : (
                                     <div className="space-y-3">
                                         {suppliers.map((sp) => (
-                                            <div key={sp.id} className="glass rounded-lg p-4 flex items-center justify-between">
-                                                <div>
-                                                    <p className="font-semibold">{sp.supplier?.name}</p>
-                                                    {sp.supplierSKU && (
-                                                        <p className="text-sm text-muted-foreground font-mono">SKU: {sp.supplierSKU}</p>
-                                                    )}
-                                                </div>
-                                                <div className="text-right">
-                                                    {sp.unitPrice && (
-                                                        <p className="font-mono font-bold">${sp.unitPrice}</p>
-                                                    )}
-                                                    {sp.leadTimeDays && (
-                                                        <p className="text-sm text-muted-foreground">{sp.leadTimeDays} days lead time</p>
-                                                    )}
+                                            <div key={sp.id} className="glass rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <p className="font-semibold text-lg">{sp.supplier?.name}</p>
+                                                        {sp.supplierSKU && (
+                                                            <p className="text-sm text-muted-foreground font-mono">SKU: {sp.supplierSKU}</p>
+                                                        )}
+                                                        <div className="flex items-center gap-4 mt-2">
+                                                            {sp.unitPrice && (
+                                                                <p className="font-mono font-bold text-emerald-500">${sp.unitPrice}</p>
+                                                            )}
+                                                            {sp.leadTimeDays && (
+                                                                <p className="text-sm text-muted-foreground">{sp.leadTimeDays} days lead time</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {sp.productUrl && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => window.api.openExternal(sp.productUrl)}
+                                                                className="gap-2"
+                                                            >
+                                                                <ExternalLink className="h-4 w-4" />
+                                                                View Product
+                                                            </Button>
+                                                        )}
+                                                        {sp.supplier?.website && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => window.api.openExternal(sp.supplier.website)}
+                                                                className="gap-2"
+                                                            >
+                                                                <Truck className="h-4 w-4" />
+                                                                Visit Supplier
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -778,6 +821,84 @@ export default function PartDetails() {
                             disabled={isUploading}
                         >
                             {isUploading ? 'Uploading...' : 'Select & Upload'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+
+            {/* Supplier Assignment Dialog */}
+            <Dialog open={showSupplierDialog} onOpenChange={setShowSupplierDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Assign Supplier to Part</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Supplier *</label>
+                            <Select
+                                value={supplierFormData.supplierId}
+                                onValueChange={(val) => setSupplierFormData({ ...supplierFormData, supplierId: val })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select supplier..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableSuppliers.map((s) => (
+                                        <SelectItem key={s.id} value={s.id}>
+                                            {s.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Supplier SKU</label>
+                            <Input
+                                value={supplierFormData.supplierSKU}
+                                onChange={(e) => setSupplierFormData({ ...supplierFormData, supplierSKU: e.target.value })}
+                                placeholder="Supplier's part number"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Unit Price</label>
+                                <Input
+                                    type="number"
+                                    value={supplierFormData.unitPrice}
+                                    onChange={(e) => setSupplierFormData({ ...supplierFormData, unitPrice: e.target.value })}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Lead Time (days)</label>
+                                <Input
+                                    type="number"
+                                    value={supplierFormData.leadTimeDays}
+                                    onChange={(e) => setSupplierFormData({ ...supplierFormData, leadTimeDays: e.target.value })}
+                                    placeholder="7"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Product URL</label>
+                            <Input
+                                value={supplierFormData.productUrl}
+                                onChange={(e) => setSupplierFormData({ ...supplierFormData, productUrl: e.target.value })}
+                                placeholder="https://supplier.com/products/part123"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Direct link to this product on supplier's website
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSupplierDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleAssignSupplier} disabled={!supplierFormData.supplierId}>
+                            Assign Supplier
                         </Button>
                     </DialogFooter>
                 </DialogContent>

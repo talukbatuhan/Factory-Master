@@ -1,14 +1,19 @@
 const { ipcMain } = require('electron')
 const getPrismaClient = require('../database/client')
+const { getCurrentUser } = require('./auth')
 
 // Get Dashboard Stats
 ipcMain.handle('reports:getStats', async (event) => {
     try {
         const prisma = getPrismaClient()
+        const where = {}
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
 
-        // SQLite doesn't support column comparison in where clause efficiently with standard Prisma API
-        // So we fetch necessary fields to count low stock
         const allPartsForStock = await prisma.part.findMany({
+            where,
             select: { stockQuantity: true, reorderLevel: true }
         })
         const lowStockCount = allPartsForStock.filter(p => p.stockQuantity <= p.reorderLevel).length
@@ -20,11 +25,11 @@ ipcMain.handle('reports:getStats', async (event) => {
             ordersCompleted,
             suppliersCount
         ] = await Promise.all([
-            prisma.part.count(),
-            prisma.productionOrder.count(),
-            prisma.productionOrder.count({ where: { status: 'IN_PROGRESS' } }),
-            prisma.productionOrder.count({ where: { status: 'COMPLETED' } }),
-            prisma.supplier.count()
+            prisma.part.count({ where }),
+            prisma.productionOrder.count({ where }),
+            prisma.productionOrder.count({ where: { ...where, status: 'IN_PROGRESS' } }),
+            prisma.productionOrder.count({ where: { ...where, status: 'COMPLETED' } }),
+            prisma.supplier.count({ where })
         ])
 
         return {
@@ -45,13 +50,16 @@ ipcMain.handle('reports:getStats', async (event) => {
 ipcMain.handle('reports:getInventoryValuation', async (event) => {
     try {
         const prisma = getPrismaClient()
-        // Fetch all parts with their stock and supplier pricing
+        const where = {
+            stockQuantity: { gt: 0 }
+        }
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
+
         const parts = await prisma.part.findMany({
-            where: {
-                stockQuantity: {
-                    gt: 0 // Only interested in items in stock
-                }
-            },
+            where,
             include: {
                 supplierParts: {
                     select: {
@@ -62,9 +70,7 @@ ipcMain.handle('reports:getInventoryValuation', async (event) => {
             }
         })
 
-        // Calculate value for each part
         const valuationData = parts.map(part => {
-            // Calculate average price from suppliers (simplistic approach)
             const prices = part.supplierParts
                 .filter(sp => sp.unitPrice !== null)
                 .map(sp => sp.unitPrice)
@@ -87,12 +93,9 @@ ipcMain.handle('reports:getInventoryValuation', async (event) => {
             }
         })
 
-        // Sort by total value descending
         valuationData.sort((a, b) => b.totalValue - a.totalValue)
 
         const grandTotalValue = valuationData.reduce((sum, item) => sum + item.totalValue, 0)
-
-        // Count items with no value (missing supplier pricing)
         const itemsWithNoValue = valuationData.filter(item => item.totalValue === 0).length
 
         return {
@@ -113,12 +116,16 @@ ipcMain.handle('reports:getProductionStats', async (event, days = 30) => {
         const dateLimit = new Date()
         dateLimit.setDate(dateLimit.getDate() - days)
 
+        const where = {
+            createdAt: { gte: dateLimit }
+        }
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
+
         const orders = await prisma.productionOrder.findMany({
-            where: {
-                createdAt: {
-                    gte: dateLimit
-                }
-            },
+            where,
             include: {
                 part: {
                     select: {
@@ -132,13 +139,11 @@ ipcMain.handle('reports:getProductionStats', async (event, days = 30) => {
             }
         })
 
-        // Group by status
         const statusCounts = orders.reduce((acc, order) => {
             acc[order.status] = (acc[order.status] || 0) + 1
             return acc
         }, {})
 
-        // Calculate completion rate (Completed vs Total Non-Cancelled)
         const completed = statusCounts['COMPLETED'] || 0
         const total = orders.length
         const cancelled = statusCounts['CANCELLED'] || 0
@@ -150,8 +155,8 @@ ipcMain.handle('reports:getProductionStats', async (event, days = 30) => {
             timeframeDays: days,
             totalOrders: total,
             statusBreakdown: statusCounts,
-            completionRate: Math.round(completionRate * 10) / 10, // Round to 1 decimal
-            recentOrders: orders.slice(0, 10) // Return last 10 for display
+            completionRate: Math.round(completionRate * 10) / 10,
+            recentOrders: orders.slice(0, 10)
         }
     } catch (error) {
         console.error('Error fetching production stats:', error)
@@ -163,14 +168,20 @@ ipcMain.handle('reports:getProductionStats', async (event, days = 30) => {
 ipcMain.handle('reports:getLowStock', async (event) => {
     try {
         const prisma = getPrismaClient()
-        // Fetch all parts then filtering is required for SQLite column comparison
+        const where = {}
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
+
         const allParts = await prisma.part.findMany({
+            where,
             include: {
                 supplierParts: {
                     include: {
                         supplier: true
                     },
-                    take: 1 // Just get the primary supplier
+                    take: 1
                 }
             }
         })

@@ -20,6 +20,7 @@ import {
     Languages,
     ChevronLeft,
     ChevronRight,
+    Building2,
 } from 'lucide-react'
 import { Button } from '../ui/button'
 
@@ -36,6 +37,7 @@ const navigation = [
 const settingsNav = [
     { name: 'Users', href: '/settings/users', icon: User, requiredRole: 'ENGINEER' },
     { name: 'Profile', href: '/settings/profile', icon: User },
+    { name: 'Company', href: '/settings/company', icon: Building2 },
     { name: 'System', href: '/settings/system', icon: Settings },
 ]
 

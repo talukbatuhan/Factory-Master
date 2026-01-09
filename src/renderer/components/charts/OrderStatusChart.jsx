@@ -1,18 +1,56 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Activity } from 'lucide-react'
 
 export default function OrderStatusChart({ data, title = "Order Status Distribution" }) {
-    // Default sample data if none provided
-    const defaultData = [
-        { name: 'Completed', value: 45, color: '#10b981' },
-        { name: 'In Progress', value: 28, color: '#f59e0b' },
-        { name: 'Planned', value: 18, color: '#3b82f6' },
-        { name: 'On Hold', value: 9, color: '#6b7280' },
-    ]
+    const [chartData, setChartData] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    const chartData = data || defaultData
+    useEffect(() => {
+        if (data) {
+            setChartData(data)
+            setLoading(false)
+        } else {
+            fetchOrderStatusData()
+        }
+    }, [data])
+
+    const fetchOrderStatusData = async () => {
+        try {
+            const result = await window.api.getAllProductionOrders({})
+            if (result?.success && result.orders) {
+                // Group orders by status
+                const statusCounts = result.orders.reduce((acc, order) => {
+                    acc[order.status] = (acc[order.status] || 0) + 1
+                    return acc
+                }, {})
+
+                const colors = {
+                    'COMPLETED': '#10b981',
+                    'IN_PROGRESS': '#f59e0b',
+                    'PLANNED': '#3b82f6',
+                    'ON_HOLD': '#6b7280',
+                    'CANCELLED': '#ef4444'
+                }
+
+                const formattedData = Object.entries(statusCounts).map(([status, count]) => ({
+                    name: status.replace('_', ' '),
+                    value: count,
+                    color: colors[status] || '#3b82f6'
+                }))
+
+                setChartData(formattedData.length > 0 ? formattedData : [
+                    { name: 'No Data', value: 1, color: '#6b7280' }
+                ])
+            }
+        } catch (error) {
+            console.error('Error fetching order status data:', error)
+            setChartData([{ name: 'No Data', value: 1, color: '#6b7280' }])
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const RADIAN = Math.PI / 180
     const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
@@ -34,6 +72,24 @@ export default function OrderStatusChart({ data, title = "Order Status Distribut
             >
                 {`${(percent * 100).toFixed(0)}%`}
             </text>
+        )
+    }
+
+    if (loading) {
+        return (
+            <Card className="border-border">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <Activity className="h-5 w-5 text-purple-500" />
+                        {title}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="h-[250px] flex items-center justify-center">
+                        <p className="text-muted-foreground text-sm">Loading...</p>
+                    </div>
+                </CardContent>
+            </Card>
         )
     }
 

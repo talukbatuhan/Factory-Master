@@ -1,11 +1,18 @@
 const { ipcMain } = require('electron')
 const getPrismaClient = require('../database/client')
+const { getCurrentUser } = require('./auth')
 
 const prisma = getPrismaClient()
 
 ipcMain.handle('suppliers:getAll', async (event, filters = {}) => {
     try {
         const where = {}
+
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
+
         if (filters.type && filters.type !== 'ALL') {
             where.type = filters.type
         }
@@ -52,6 +59,11 @@ ipcMain.handle('suppliers:getById', async (event, id) => {
 
 ipcMain.handle('suppliers:create', async (event, data) => {
     try {
+        const currentUser = getCurrentUser()
+        if (!data.companyId && currentUser?.companyId) {
+            data.companyId = currentUser.companyId
+        }
+
         const supplier = await prisma.supplier.create({
             data
         })
@@ -75,12 +87,8 @@ ipcMain.handle('suppliers:update', async (event, id, data) => {
 
 ipcMain.handle('suppliers:delete', async (event, id) => {
     try {
-        // Check for dependencies or use onDelete: cascade
-        // Usually safer to check
         const count = await prisma.supplierPart.count({ where: { supplierId: id } })
         if (count > 0) {
-            // Delete relations first or error?
-            // "This will remove all pricing associations" says the UI.
             await prisma.supplierPart.deleteMany({ where: { supplierId: id } })
         }
 
@@ -100,7 +108,6 @@ ipcMain.handle('suppliers:assignPart', async (event, supplierId, partId, data) =
         })
 
         if (existing) {
-            // Update existing assignment
             const updated = await prisma.supplierPart.update({
                 where: { id: existing.id },
                 data
@@ -108,7 +115,6 @@ ipcMain.handle('suppliers:assignPart', async (event, supplierId, partId, data) =
             return { success: true, supplierPart: updated }
         }
 
-        // Create new
         const created = await prisma.supplierPart.create({
             data: {
                 supplierId,
@@ -117,6 +123,20 @@ ipcMain.handle('suppliers:assignPart', async (event, supplierId, partId, data) =
             }
         })
         return { success: true, supplierPart: created }
+    } catch (error) {
+        return { success: false, error: error.message }
+    }
+})
+
+ipcMain.handle('suppliers:removePart', async (event, supplierId, partId) => {
+    try {
+        await prisma.supplierPart.deleteMany({
+            where: {
+                supplierId,
+                partId
+            }
+        })
+        return { success: true }
     } catch (error) {
         return { success: false, error: error.message }
     }

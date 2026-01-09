@@ -7,6 +7,19 @@ contextBridge.exposeInMainWorld('api', {
     logout: () => ipcRenderer.invoke('auth:logout'),
     getCurrentUser: () => ipcRenderer.invoke('auth:getCurrentUser'),
 
+    // Company
+    checkSetupNeeded: () => ipcRenderer.invoke('company:checkSetupNeeded'),
+    getDefaultCompany: () => ipcRenderer.invoke('company:getDefault'),
+    getAllCompanies: () => ipcRenderer.invoke('company:getAll'),
+    getCompany: (companyId) => ipcRenderer.invoke('company:get', companyId),
+    createCompany: (data) => ipcRenderer.invoke('company:create', data),
+    updateCompany: (companyId, data) => ipcRenderer.invoke('company:update', companyId, data),
+    deleteCompany: (companyId) => ipcRenderer.invoke('company:delete', companyId),
+    exportCompany: (companyId) => ipcRenderer.invoke('company:export', companyId),
+    importCompany: () => ipcRenderer.invoke('company:import'),
+    uploadCompanyLogo: (companyId) => ipcRenderer.invoke('company:uploadLogo', companyId),
+    getCompanyLogoPath: (filename) => ipcRenderer.invoke('company:getLogoPath', filename),
+
     // Parts
     getAllParts: (filters) => ipcRenderer.invoke('parts:getAll', filters),
     getPartById: (id) => ipcRenderer.invoke('parts:getById', id),
@@ -44,6 +57,8 @@ contextBridge.exposeInMainWorld('api', {
     deleteSupplier: (id) => ipcRenderer.invoke('suppliers:delete', id),
     assignPartToSupplier: (supplierId, partId, data) =>
         ipcRenderer.invoke('suppliers:assignPart', supplierId, partId, data),
+    removePartFromSupplier: (supplierId, partId) =>
+        ipcRenderer.invoke('suppliers:removePart', supplierId, partId),
 
     // Processes
     getAllProcesses: () => ipcRenderer.invoke('processes:getAll'),
@@ -60,6 +75,7 @@ contextBridge.exposeInMainWorld('api', {
     updateOrder: (id, data) => ipcRenderer.invoke('production:update', id, data),
     updateOrderStatus: (id, status) => ipcRenderer.invoke('production:updateStatus', id, status),
     getAllProductionOrders: (filters) => ipcRenderer.invoke('production:getAll', filters),
+    getProductionOrderById: (id) => ipcRenderer.invoke('production:getById', id),
     createProductionOrder: (data) => ipcRenderer.invoke('production:create', data),
     updateProductionOrderStatus: (id, status) => ipcRenderer.invoke('production:updateStatus', id, status),
     deleteProductionOrder: (id) => ipcRenderer.invoke('production:delete', id),
@@ -100,4 +116,7 @@ contextBridge.exposeInMainWorld('api', {
     createNotification: (notification) => ipcRenderer.invoke('notifications:create', notification),
     checkLowStockNotifications: () => ipcRenderer.invoke('notifications:checkLowStock'),
     createOrderNotification: (data) => ipcRenderer.invoke('notifications:createOrderNotification', data),
+
+    // Utility
+    openExternal: (url) => ipcRenderer.invoke('utility:openExternal', url),
 })

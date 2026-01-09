@@ -6,10 +6,18 @@ const prisma = getPrismaClient()
 
 let currentUser = null
 
+// Export function to get current user
+function getCurrentUser() {
+    return currentUser
+}
+
 ipcMain.handle('auth:login', async (event, email, password) => {
     try {
-        const user = await prisma.user.findUnique({
+        const user = await prisma.user.findFirst({
             where: { email },
+            include: {
+                company: true
+            }
         })
 
         if (!user) {
@@ -23,6 +31,10 @@ ipcMain.handle('auth:login', async (event, email, password) => {
 
         if (user.status !== 'ACTIVE') {
             return { success: false, error: 'User account is inactive' }
+        }
+
+        if (user.company.status !== 'ACTIVE') {
+            return { success: false, error: 'Company account is inactive' }
         }
 
         // Strip password hash
@@ -46,11 +58,19 @@ ipcMain.handle('auth:getCurrentUser', async () => {
 })
 
 // User Management (Admin Only)
-ipcMain.handle('users:getAll', async () => {
+ipcMain.handle('users:getAll', async (event, companyId) => {
     try {
+        // If no companyId provided, try to get it from current user
+        let filterCompanyId = companyId
+        if (!filterCompanyId && currentUser) {
+            filterCompanyId = currentUser.companyId
+        }
+
         const users = await prisma.user.findMany({
+            where: filterCompanyId ? { companyId: filterCompanyId } : {},
             select: {
                 id: true,
+                companyId: true,
                 name: true,
                 email: true,
                 role: true,
@@ -68,13 +88,24 @@ ipcMain.handle('users:getAll', async () => {
 
 ipcMain.handle('users:create', async (event, data) => {
     try {
-        const { name, email, password, role } = data
+        const { name, email, password, role, companyId } = data
+
+        // Use provided companyId or current user's companyId
+        let userCompanyId = companyId
+        if (!userCompanyId && currentUser) {
+            userCompanyId = currentUser.companyId
+        }
+
+        if (!userCompanyId) {
+            return { success: false, error: 'Company ID is required' }
+        }
 
         // Hash password
         const passwordHash = await bcrypt.hash(password, 10)
 
         const user = await prisma.user.create({
             data: {
+                companyId: userCompanyId,
                 name,
                 email,
                 passwordHash,
@@ -135,3 +166,6 @@ ipcMain.handle('users:delete', async (event, id) => {
         return { success: false, error: error.message }
     }
 })
+
+// Export for other modules
+module.exports = { getCurrentUser }

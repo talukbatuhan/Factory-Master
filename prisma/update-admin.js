@@ -14,7 +14,7 @@ async function updateAdmin() {
 
         if (!existing) {
             console.log('User not found! Creating new one...')
-            const password = await bcrypt.hash('Tahir123', 10)
+            const password = await bcrypt.hash('admin123', 10)
             const created = await prisma.user.create({
                 data: {
                     email: 'engineer@factory.com',
@@ -27,8 +27,8 @@ async function updateAdmin() {
             console.log('Created user:', created)
         } else {
             console.log('Found existing user, updating...')
-            // Hash the password 'Tahir123'
-            const password = await bcrypt.hash('Tahir123', 10)
+
+            const password = await bcrypt.hash('admin123', 10)
 
             // Update the user
             const updated = await prisma.user.update({
@@ -42,7 +42,7 @@ async function updateAdmin() {
             console.log('Updated user:', updated)
         }
 
-        console.log('✅ engineer@factory.com is now ADMIN with password: Tahir123')
+        console.log('✅ engineer@factory.com is now ADMIN with password: admin123')
     } catch (error) {
         console.error('Error:', error.message)
         throw error

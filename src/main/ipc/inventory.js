@@ -1,15 +1,24 @@
 const { ipcMain } = require('electron')
 const getPrismaClient = require('../database/client')
+const { getCurrentUser } = require('./auth')
 
 const prisma = getPrismaClient()
 
 ipcMain.handle('inventory:getHistory', async (event, filters) => {
     try {
-        // Handle both string partId and object with partId
         const partId = typeof filters === 'string' ? filters : filters?.partId
 
+        const where = {}
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
+        if (partId) {
+            where.partId = partId
+        }
+
         const transactions = await prisma.inventoryTransaction.findMany({
-            where: partId ? { partId } : {},
+            where,
             include: {
                 recordedBy: {
                     select: { name: true }
@@ -28,9 +37,7 @@ ipcMain.handle('inventory:record', async (event, data) => {
     try {
         const { partId, type, quantity, notes, recordedById } = data
 
-        // Use transaction
         const result = await prisma.$transaction(async (tx) => {
-            // Get current part stock
             const part = await tx.part.findUnique({
                 where: { id: partId }
             })
@@ -38,14 +45,6 @@ ipcMain.handle('inventory:record', async (event, data) => {
             if (!part) throw new Error('Part not found')
 
             let newBalance = part.stockQuantity
-            // If type is OUT, subtract. If IN, add. ADJUSTMENT depends on sign of quantity or explicit set?
-            // Usually ADJUSTMENT is +/- quantity.
-            // Let's assume quantity is already signed or type dictates it.
-            // Standard convention: 
-            // IN: + quantity
-            // OUT: - quantity (input should be positive usually, so we subtract)
-            // ADJUSTMENT: + quantity (can be negative)
-
             let change = parseInt(quantity)
             if (type === 'OUT') change = -Math.abs(change)
             if (type === 'IN') change = Math.abs(change)
@@ -56,6 +55,7 @@ ipcMain.handle('inventory:record', async (event, data) => {
 
             const transaction = await tx.inventoryTransaction.create({
                 data: {
+                    companyId: part.companyId,
                     partId,
                     type,
                     quantity: change,
@@ -82,10 +82,14 @@ ipcMain.handle('inventory:record', async (event, data) => {
 
 ipcMain.handle('inventory:getLowStock', async () => {
     try {
-        // SQLite limitation on field comparison might require raw query or retrieving all
-        // Prisma doesn't support where: { stockQuantity: { lte: prisma.part.fields.reorderLevel } } easily
+        const where = {}
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
 
         const allParts = await prisma.part.findMany({
+            where,
             select: {
                 id: true,
                 partNumber: true,

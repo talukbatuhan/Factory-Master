@@ -82,7 +82,8 @@ export default function SupplierForm() {
 
             if (result.success) {
                 toast.success(isEdit ? t('suppliers.updated') : t('suppliers.created'))
-                navigate('/suppliers')
+                const targetId = isEdit ? id : result.supplier.id
+                navigate(`/suppliers/${targetId}`)
             } else {
                 toast.error(result.error || t('messages.saveFailed'))
             }

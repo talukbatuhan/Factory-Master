@@ -4,38 +4,40 @@ const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
-    console.log('Seeding database...')
+    console.log('🌱 Seeding database...')
 
-    // Create default ADMIN user
-    const adminPassword = await bcrypt.hash('admin123', 10)
-
-    const admin = await prisma.user.upsert({
-        where: { email: 'admin@factory.com' },
-        update: {
-            role: 'ADMIN',
-            passwordHash: adminPassword,
+    const company = await prisma.company.create({
+        data: {
+            name: 'Acme Manufacturing Ltd.',
+            status: 'ACTIVE',
+            isDefault: true,
         },
-        create: {
+    })
+
+    console.log('✅ Company created:', company.name)
+
+    const adminPassword = await bcrypt.hash('admin123', 10)
+    const admin = await prisma.user.create({
+        data: {
+            companyId: company.id,
             email: 'admin@factory.com',
-            name: 'Administrator',
+            name: 'Admin User',
             passwordHash: adminPassword,
             role: 'ADMIN',
             status: 'ACTIVE',
         },
     })
 
-    console.log('✅ Default admin user created/updated:')
-    console.log('   Email:', admin.email)
-    console.log('   Password: admin123')
-    console.log('   Role:', admin.role)
+    console.log('✅ Admin user created')
     console.log('')
-    console.log('🚀 Seed complete! You can now login with:')
-    console.log('   admin@factory.com / admin123')
+    console.log('🎉 Seeding completed!')
+    console.log('📝 Login: admin@factory.com / admin123')
+    console.log('')
 }
 
 main()
     .catch((e) => {
-        console.error('Seed error:', e)
+        console.error(e)
         process.exit(1)
     })
     .finally(async () => {

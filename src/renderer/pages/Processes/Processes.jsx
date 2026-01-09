@@ -35,11 +35,25 @@ export default function Processes() {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
+        partId: ''
     })
+    const [availableParts, setAvailableParts] = useState([])
 
     useEffect(() => {
         loadProcesses()
+        loadParts()
     }, [])
+
+    const loadParts = async () => {
+        try {
+            const result = await window.api.getAllParts()
+            if (result.success) {
+                setAvailableParts(result.parts)
+            }
+        } catch (error) {
+            console.error('Failed to load parts:', error)
+        }
+    }
 
     const loadProcesses = async () => {
         try {
@@ -70,7 +84,7 @@ export default function Processes() {
             if (result.success) {
                 setShowAddDialog(false)
                 setEditingProcess(null)
-                setFormData({ name: '', description: '' })
+                setFormData({ name: '', description: '', partId: '' })
                 loadProcesses()
             } else {
                 alert(result.error || 'Failed to save process')
@@ -81,11 +95,14 @@ export default function Processes() {
         }
     }
 
+
+
     const handleEdit = (process) => {
         setEditingProcess(process)
         setFormData({
             name: process.name,
             description: process.description || '',
+            partId: process.partId || ''
         })
         setShowAddDialog(true)
     }
@@ -358,6 +375,29 @@ export default function Processes() {
                                         />
                                     </div>
 
+                                    <div>
+                                        <label className="text-sm font-medium mb-2 block">Part *</label>
+                                        <select
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={formData.partId}
+                                            onChange={(e) => setFormData({ ...formData, partId: e.target.value })}
+                                            required
+                                            disabled={!!editingProcess}
+                                        >
+                                            <option value="">Select a Part</option>
+                                            {availableParts.map((part) => (
+                                                <option key={part.id} value={part.id}>
+                                                    {part.partNumber} - {part.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {editingProcess && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Part cannot be changed for existing process
+                                            </p>
+                                        )}
+                                    </div>
+
                                     <div className="flex gap-2 justify-end pt-4">
                                         <Button
                                             type="button"
@@ -365,7 +405,7 @@ export default function Processes() {
                                             onClick={() => {
                                                 setShowAddDialog(false)
                                                 setEditingProcess(null)
-                                                setFormData({ name: '', description: '' })
+                                                setFormData({ name: '', description: '', partId: '' })
                                             }}
                                         >
                                             Cancel

@@ -1,11 +1,13 @@
 const { ipcMain } = require('electron')
 const getPrismaClient = require('../database/client')
+const { getCurrentUser } = require('./auth')
 
 const prisma = getPrismaClient()
 
-// Generate PO Number
-async function generateOrderNumber() {
+// Generate PO Number (scoped to company)
+async function generateOrderNumber(companyId) {
     const lastOrder = await prisma.productionOrder.findFirst({
+        where: { companyId },
         orderBy: { createdAt: 'desc' },
     })
 
@@ -18,6 +20,12 @@ async function generateOrderNumber() {
 ipcMain.handle('production:getAll', async (event, filters = {}) => {
     try {
         const where = {}
+
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
+
         if (filters.status && filters.status !== 'ALL') {
             where.status = filters.status
         }
@@ -49,15 +57,7 @@ ipcMain.handle('production:getById', async (event, id) => {
         const order = await prisma.productionOrder.findUnique({
             where: { id },
             include: {
-                part: {
-                    include: {
-                        bomParent: {
-                            include: {
-                                componentPart: true
-                            }
-                        }
-                    }
-                },
+                part: true,
                 createdBy: { select: { name: true } }
             }
         })
@@ -72,10 +72,18 @@ ipcMain.handle('production:getById', async (event, id) => {
 
 ipcMain.handle('production:create', async (event, data) => {
     try {
-        const orderNumber = await generateOrderNumber()
+        const currentUser = getCurrentUser()
+        const companyId = data.companyId || currentUser?.companyId
+
+        if (!companyId) {
+            return { success: false, error: 'Company ID is required' }
+        }
+
+        const orderNumber = await generateOrderNumber(companyId)
 
         const order = await prisma.productionOrder.create({
             data: {
+                companyId,
                 partId: data.partId,
                 quantity: parseInt(data.quantity),
                 status: 'PLANNED',
@@ -113,13 +121,69 @@ ipcMain.handle('production:updateStatus', async (event, id, status) => {
             updateData.completionDate = new Date()
         }
 
-        // Use transaction if we were deducting stock, but simple update for now
-        const order = await prisma.productionOrder.update({
-            where: { id },
-            data: updateData
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Update order status
+            const order = await tx.productionOrder.update({
+                where: { id },
+                data: updateData,
+                include: { part: true }
+            })
+
+            // 2. Handle Stock Movements if COMPLETED
+            if (status === 'COMPLETED') {
+                // a. Increment Finished Good Stock
+                const updatedPart = await tx.part.update({
+                    where: { id: order.partId },
+                    data: { stockQuantity: { increment: order.quantity } }
+                })
+
+                // Create Transaction Record (IN)
+                await tx.inventoryTransaction.create({
+                    data: {
+                        companyId: order.companyId,
+                        partId: order.partId,
+                        type: 'PRODUCTION',
+                        quantity: order.quantity,
+                        balanceAfter: updatedPart.stockQuantity,
+                        referenceId: order.id,
+                        notes: `Production Completed: ${order.orderNumber}`
+                    }
+                })
+
+                // b. Decrement Components Stock (BOM)
+                // Note: Using 'bOMItem' as Prisma client model name usually lowercases the first letter
+                const bomItems = await tx.bOMItem.findMany({
+                    where: { partId: order.partId },
+                    include: { componentPart: true }
+                })
+
+                for (const item of bomItems) {
+                    const requiredQty = item.quantity * order.quantity
+
+                    const updatedComponent = await tx.part.update({
+                        where: { id: item.componentPartId },
+                        data: { stockQuantity: { decrement: requiredQty } }
+                    })
+
+                    // Create Transaction Record (OUT)
+                    await tx.inventoryTransaction.create({
+                        data: {
+                            companyId: order.companyId,
+                            partId: item.componentPartId,
+                            type: 'CONSUMPTION',
+                            quantity: -requiredQty,
+                            balanceAfter: updatedComponent.stockQuantity,
+                            referenceId: order.id,
+                            notes: `Consumed for Production: ${order.orderNumber}`
+                        }
+                    })
+                }
+            }
+
+            return order
         })
 
-        return { success: true, order }
+        return { success: true, order: result }
     } catch (error) {
         return { success: false, error: error.message }
     }

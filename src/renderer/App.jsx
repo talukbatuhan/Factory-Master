@@ -11,6 +11,7 @@ import './i18n/config'
 import { Toaster } from 'sonner'
 
 // Pages
+import SetupWizard from './pages/Setup/SetupWizard'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import InventoryList from './pages/Inventory/InventoryList'
@@ -18,6 +19,7 @@ import PartForm from './pages/Inventory/PartForm'
 import PartDetails from './pages/Inventory/PartDetails'
 import BOMTree from './pages/BOM/BOMTree'
 import ProductionOrders from './pages/Production/ProductionOrders'
+import ProductionOrderForm from './pages/Production/ProductionOrderForm'
 import OrderDetails from './pages/Production/OrderDetails'
 import SupplierList from './pages/Suppliers/SupplierList'
 import SupplierDetails from './pages/Suppliers/SupplierDetails'
@@ -26,6 +28,8 @@ import Processes from './pages/Processes/Processes'
 import UserManagement from './pages/Settings/UserManagement'
 import Profile from './pages/Settings/Profile'
 import SystemSettings from './pages/Settings/SystemSettings'
+import CompanySettings from './pages/Settings/CompanySettings'
+import CompanyProfiles from './pages/Settings/CompanyProfiles'
 import Reports from './pages/Reports/Reports'
 import PageWrapper from './components/PageWrapper'
 
@@ -59,6 +63,16 @@ function AppRoutes() {
         <>
             <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>
+                    <Route path="/setup" element={
+                        <PageWrapper>
+                            <SetupWizard />
+                        </PageWrapper>
+                    } />
+                    <Route path="/profiles" element={
+                        <PageWrapper>
+                            <CompanyProfiles />
+                        </PageWrapper>
+                    } />
                     <Route path="/login" element={
                         <PageWrapper>
                             <Login />
@@ -110,6 +124,13 @@ function AppRoutes() {
                         <ProtectedRoute>
                             <PageWrapper>
                                 <ProductionOrders />
+                            </PageWrapper>
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/production/new" element={
+                        <ProtectedRoute>
+                            <PageWrapper>
+                                <ProductionOrderForm />
                             </PageWrapper>
                         </ProtectedRoute>
                     } />
@@ -173,6 +194,13 @@ function AppRoutes() {
                         <ProtectedRoute>
                             <PageWrapper>
                                 <SystemSettings />
+                            </PageWrapper>
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/settings/company" element={
+                        <ProtectedRoute>
+                            <PageWrapper>
+                                <CompanySettings />
                             </PageWrapper>
                         </ProtectedRoute>
                     } />

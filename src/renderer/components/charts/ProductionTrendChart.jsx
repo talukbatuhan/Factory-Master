@@ -1,20 +1,79 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp } from 'lucide-react'
 
 export default function ProductionTrendChart({ data, title = "Production Trend" }) {
-    // Default sample data if none provided
-    const defaultData = [
-        { month: 'Jan', orders: 12, completed: 10 },
-        { month: 'Feb', orders: 19, completed: 16 },
-        { month: 'Mar', orders: 15, completed: 14 },
-        { month: 'Apr', orders: 22, completed: 20 },
-        { month: 'May', orders: 28, completed: 25 },
-        { month: 'Jun', orders: 25, completed: 23 },
-    ]
+    const [chartData, setChartData] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    const chartData = data || defaultData
+    useEffect(() => {
+        if (data) {
+            setChartData(data)
+            setLoading(false)
+        } else {
+            fetchProductionTrendData()
+        }
+    }, [data])
+
+    const fetchProductionTrendData = async () => {
+        try {
+            const result = await window.api.getAllProductionOrders({})
+            if (result?.success && result.orders) {
+                // Get last 6 months
+                const now = new Date()
+                const monthsData = []
+
+                for (let i = 5; i >= 0; i--) {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+                    const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' })
+                    const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+                    const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)
+
+                    // Filter orders for this month
+                    const monthOrders = result.orders.filter(order => {
+                        const orderDate = new Date(order.createdAt)
+                        return orderDate >= monthStart && orderDate <= monthEnd
+                    })
+
+                    monthsData.push({
+                        month: monthName,
+                        orders: monthOrders.length,
+                        completed: monthOrders.filter(o => o.status === 'COMPLETED').length
+                    })
+                }
+
+                setChartData(monthsData)
+            }
+        } catch (error) {
+            console.error('Error fetching production trend data:', error)
+            // Set empty data
+            setChartData([
+                { month: 'No', orders: 0, completed: 0 },
+                { month: 'Data', orders: 0, completed: 0 }
+            ])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <Card className="border-border">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <TrendingUp className="h-5 w-5 text-blue-500" />
+                        {title}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="h-[250px] flex items-center justify-center">
+                        <p className="text-muted-foreground text-sm">Loading...</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card className="border-border">

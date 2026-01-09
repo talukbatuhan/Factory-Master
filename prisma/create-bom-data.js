@@ -24,20 +24,33 @@ async function createBOMTestData() {
 
         const bomItems = []
 
+        // Helper to create upsert promise
+        const upsertBOM = (parent, child, qty, unit) => {
+            return prisma.bOMItem.upsert({
+                where: {
+                    partId_componentPartId: {
+                        partId: parent.id,
+                        componentPartId: child.id
+                    }
+                },
+                update: {
+                    quantity: qty,
+                    unit: unit
+                },
+                create: {
+                    partId: parent.id,
+                    componentPartId: child.id,
+                    quantity: qty,
+                    unit: unit
+                }
+            })
+        }
+
         // 1. ASSEMBLY → Components (Main Assembly needs components)
         if (assembly && components.length > 0) {
             console.log('🔧 Creating Assembly BOM...')
             components.forEach((comp, idx) => {
-                bomItems.push(
-                    prisma.bOMItem.create({
-                        data: {
-                            partId: assembly.id, // Changed from parentPartId
-                            componentPartId: comp.id,
-                            quantity: 1 + idx, // 1, 2, 3 pieces
-                            unit: comp.unit
-                        }
-                    })
-                )
+                bomItems.push(upsertBOM(assembly, comp, 1 + idx, comp.unit))
             })
         }
 
@@ -48,31 +61,13 @@ async function createBOMTestData() {
                 // Each product uses 2-3 components
                 const compCount = 2 + (pidx % 2)
                 for (let i = 0; i < compCount && i < components.length; i++) {
-                    bomItems.push(
-                        prisma.bOMItem.create({
-                            data: {
-                                partId: product.id, // Changed from parentPartId
-                                componentPartId: components[i].id,
-                                quantity: 2 + i,
-                                unit: components[i].unit
-                            }
-                        })
-                    )
+                    bomItems.push(upsertBOM(product, components[i], 2 + i, components[i].unit))
                 }
 
                 // Each product also uses 1-2 raw materials
                 const rawCount = 1 + (pidx % 2)
                 for (let i = 0; i < rawCount && i < rawMaterials.length; i++) {
-                    bomItems.push(
-                        prisma.bOMItem.create({
-                            data: {
-                                partId: product.id, // Changed from parentPartId
-                                componentPartId: rawMaterials[i].id,
-                                quantity: 5 + (i * 3), // 5, 8, 11... kg
-                                unit: rawMaterials[i].unit
-                            }
-                        })
-                    )
+                    bomItems.push(upsertBOM(product, rawMaterials[i], 5 + (i * 3), rawMaterials[i].unit))
                 }
             })
         }
@@ -84,23 +79,14 @@ async function createBOMTestData() {
                 // Each component uses 1-2 raw materials
                 const rawCount = 1 + (cidx % 2)
                 for (let i = 0; i < rawCount && i < rawMaterials.length; i++) {
-                    bomItems.push(
-                        prisma.bOMItem.create({
-                            data: {
-                                partId: comp.id, // Changed from parentPartId
-                                componentPartId: rawMaterials[i].id,
-                                quantity: 2 + (i * 2), // 2, 4, 6... kg
-                                unit: rawMaterials[i].unit
-                            }
-                        })
-                    )
+                    bomItems.push(upsertBOM(comp, rawMaterials[i], 2 + (i * 2), rawMaterials[i].unit))
                 }
             })
         }
 
-        await Promise.all(bomItems)
+        const results = await Promise.all(bomItems)
 
-        console.log(`\n✅ Created ${bomItems.length} BOM relationships\n`)
+        console.log(`\n✅ Created ${results.length} BOM relationships\n`)
 
         // Summary
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
@@ -110,7 +96,7 @@ async function createBOMTestData() {
         console.log(`   Assembly (1) → Components (${components.length})`)
         console.log(`   Products (${products.length}) → Components + Raw Materials`)
         console.log(`   Components (${components.length}) → Raw Materials`)
-        console.log(`\n   Total BOM Items: ${bomItems.length}`)
+        console.log(`\n   Total BOM Items: ${results.length}`)
         console.log('\n🚀 Go to BOM page to see the tree!')
 
     } catch (error) {

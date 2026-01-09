@@ -7,9 +7,32 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  taxId       String?  @unique
+  phone       String?
+  email       String?
+  address     String?
+  website     String?
+  logo        String?  // Logo file path
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  isDefault   Boolean  @default(false) // For initial setup
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users                 User[]
+  parts                 Part[]
+  productionOrders      ProductionOrder[]
+  suppliers             Supplier[]
+  inventoryTransactions InventoryTransaction[]
+}
+
 model User {
   id           String   @id @default(uuid())
-  email        String   @unique
+  companyId    String
+  email        String
   name         String
   passwordHash String
   role         String   @default("OPERATOR") // ADMIN, ENGINEER, OPERATOR
@@ -18,14 +41,18 @@ model User {
   updatedAt    DateTime @updatedAt
   
   // Relations
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   files        PartFile[]
   transactions InventoryTransaction[]
   orders       ProductionOrder[]
+
+  @@unique([companyId, email]) // Email unique within company
 }
 
 model Part {
   id            String   @id @default(uuid())
-  partNumber    String   @unique
+  companyId     String
+  partNumber    String
   name          String
   description   String?
   type          String   @default("COMPONENT") // PRODUCT, ASSEMBLY, COMPONENT, RAW_MATERIAL
@@ -35,6 +62,9 @@ model Part {
   reorderLevel  Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // Relations
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // BOM Relations (Self-referencing)
   bomParent     BOMItem[] @relation("BomParent") // Items where this part is the parent (Assembly)
@@ -47,6 +77,8 @@ model Part {
   process       Process?       // 1-to-1: A part has one manufacturing process
   productionOrders ProductionOrder[]
   transactions  InventoryTransaction[]
+
+  @@unique([companyId, partNumber]) // Part number unique within company
 }
 
 model PartRevision {
@@ -117,6 +149,7 @@ model ProcessStep {
 
 model Supplier {
   id            String   @id @default(uuid())
+  companyId     String
   name          String
   type          String   @default("LOCAL") // LOCAL, ONLINE
   contactPerson String?
@@ -128,6 +161,8 @@ model Supplier {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Relations
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   supplierParts SupplierPart[]
 }
 
@@ -140,6 +175,7 @@ model SupplierPart {
   currency     String   @default("USD") // USD, EUR, TRY
   leadTimeDays Int?
   minOrderQty  Int      @default(1)
+  productUrl   String?  // URL to the product page on supplier's website
   
   supplier     Supplier @relation(fields: [supplierId], references: [id])
   part         Part     @relation(fields: [partId], references: [id])
@@ -149,7 +185,8 @@ model SupplierPart {
 
 model ProductionOrder {
   id             String   @id @default(uuid())
-  orderNumber    String   @unique // PO-000001
+  companyId      String
+  orderNumber    String
   partId         String
   quantity       Int
   status         String   @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
@@ -161,12 +198,17 @@ model ProductionOrder {
   updatedAt      DateTime @updatedAt
   createdById    String?
 
+  // Relations
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   part           Part     @relation(fields: [partId], references: [id])
   createdBy      User?    @relation(fields: [createdById], references: [id])
+
+  @@unique([companyId, orderNumber]) // Order number unique within company
 }
 
 model InventoryTransaction {
   id           String   @id @default(uuid())
+  companyId    String
   partId       String
   type         String   // IN, OUT, ADJUSTMENT, CONSUMPTION, PRODUCTION
   quantity     Int
@@ -176,6 +218,8 @@ model InventoryTransaction {
   recordedById String?
   createdAt    DateTime @default(now())
 
+  // Relations
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   part         Part     @relation(fields: [partId], references: [id])
   recordedBy   User?    @relation(fields: [recordedById], references: [id])
 }

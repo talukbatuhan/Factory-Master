@@ -53,6 +53,7 @@ app.on('ready', () => {
 
     // Load IPC handlers
     try {
+        require('./ipc/company')
         require('./ipc/auth')
         require('./ipc/parts')
         require('./ipc/bom')
@@ -65,6 +66,7 @@ app.on('ready', () => {
         require('./ipc/settings')
         require('./ipc/search')
         require('./ipc/notifications')
+        require('./ipc/utility')
         require('./services/notificationService')
         console.log('All IPC handlers loaded successfully')
     } catch (error) {

@@ -1,34 +1,33 @@
 const { ipcMain } = require('electron')
 const getPrismaClient = require('../database/client')
+const { getCurrentUser } = require('./auth')
 
 const prisma = getPrismaClient()
 
 ipcMain.handle('parts:getAll', async (event, filters = {}) => {
     try {
         const where = {}
+
+        // Add company filter
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
+
         if (filters.type && filters.type !== 'ALL') {
             where.type = filters.type
         }
         if (filters.search) {
             where.OR = [
-                { name: { contains: filters.search } }, // SQLite doesn't support mode: 'insensitive' natively in Prisma 5 via args usually?
+                { name: { contains: filters.search } },
                 { partNumber: { contains: filters.search } }
             ]
-        }
-        if (filters.stockStatus) {
-            if (filters.stockStatus === 'LOW') {
-                // Cant easily do field comparison in where, do logic after fetch or raw query
-            }
         }
 
         const parts = await prisma.part.findMany({
             where,
             orderBy: { createdAt: 'desc' }
         })
-
-        // Post-filter for stock status if needed?
-        // UI usually handles badge logic, but filters might be needed.
-        // For MVP, basic filtering is fine.
 
         return { success: true, parts }
     } catch (error) {
@@ -42,11 +41,9 @@ ipcMain.handle('parts:getById', async (event, id) => {
             where: { id },
             include: {
                 revisions: { orderBy: { createdAt: 'desc' } },
-                bomParent: { include: { componentPart: true } }, // Where this part is parent
+                bomParent: { include: { componentPart: true } },
                 supplierParts: { include: { supplier: true } },
-                bomChildren: true // Where this part is child? No, BOMItem relations.
-                // bomParent = items where this part is parent (has components)
-                // bomChildren = items where this part is component (is used in assemblies)
+                bomChildren: true
             }
         })
 
@@ -60,11 +57,15 @@ ipcMain.handle('parts:getById', async (event, id) => {
 
 ipcMain.handle('parts:getTree', async () => {
     try {
-        // Fetch all BOM items and build tree?
-        // Or fetch top Level items?
-        // For tree visualization, we need structure.
+        const where = {}
+
+        const currentUser = getCurrentUser()
+        if (currentUser?.companyId) {
+            where.companyId = currentUser.companyId
+        }
 
         const allParts = await prisma.part.findMany({
+            where,
             include: {
                 bomParent: {
                     include: { componentPart: true }
@@ -72,7 +73,6 @@ ipcMain.handle('parts:getTree', async () => {
             }
         })
 
-        // Build tree logical structure in memory if needed or just return flat list with BOM
         return { success: true, parts: allParts }
     } catch (error) {
         return { success: false, error: error.message }
@@ -82,15 +82,25 @@ ipcMain.handle('parts:getTree', async () => {
 ipcMain.handle('parts:create', async (event, data) => {
     try {
         const { revisions, ...partData } = data
-        // revisions is usually just handled by creating first revision?
-        // partData should have fields matching schema.
+
+        const currentUser = getCurrentUser()
+        const companyId = partData.companyId || currentUser?.companyId
+
+        if (!companyId) {
+            return { success: false, error: 'Company ID is required. Please log in again.' }
+        }
 
         const part = await prisma.part.create({
             data: {
-                ...partData,
-                // Ensure required defaults
+                companyId: companyId,
+                partNumber: partData.partNumber,
+                name: partData.name,
+                description: partData.description || '',
+                type: partData.type || 'COMPONENT',
+                materialType: partData.materialType || '',
                 stockQuantity: parseInt(partData.stockQuantity || 0),
-                reorderLevel: parseInt(partData.reorderLevel || 0)
+                unit: partData.unit || 'pcs',
+                reorderLevel: parseInt(partData.reorderLevel || 0),
             }
         })
         return { success: true, part }
@@ -114,9 +124,6 @@ ipcMain.handle('parts:update', async (event, id, data) => {
 
 ipcMain.handle('parts:delete', async (event, id) => {
     try {
-        // Check dependencies
-        // BOM usage, Production Orders, Stocks?
-
         await prisma.part.delete({
             where: { id }
         })

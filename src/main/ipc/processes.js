@@ -8,16 +8,14 @@ ipcMain.handle('processes:getAll', async () => {
     try {
         const processes = await prisma.process.findMany({
             include: {
-                steps: {
-                    include: {
-                        part: {
-                            select: {
-                                id: true,
-                                partNumber: true,
-                                name: true,
-                            },
-                        },
+                part: {
+                    select: {
+                        id: true,
+                        partNumber: true,
+                        name: true,
                     },
+                },
+                steps: {
                     orderBy: { order: 'asc' },
                 },
             },
@@ -37,16 +35,14 @@ ipcMain.handle('processes:getById', async (event, id) => {
         const process = await prisma.process.findUnique({
             where: { id },
             include: {
-                steps: {
-                    include: {
-                        part: {
-                            select: {
-                                id: true,
-                                partNumber: true,
-                                name: true,
-                            },
-                        },
+                part: {
+                    select: {
+                        id: true,
+                        partNumber: true,
+                        name: true,
                     },
+                },
+                steps: {
                     orderBy: { order: 'asc' },
                 },
             },
@@ -73,23 +69,19 @@ ipcMain.handle('processes:create', async (event, data) => {
                 ...processData,
                 steps: steps ? {
                     create: steps.map((step, index) => ({
-                        partId: step.partId,
                         order: index + 1,
                         name: step.name,
                         description: step.description,
-                        estimatedDuration: step.estimatedDuration,
-                        machineRequired: step.machineRequired,
+                        machine: step.machineRequired, // mapped to 'machine' in schema
+                        // setupTime and cycleTime could be added if available in input
                     })),
                 } : undefined,
             },
             include: {
-                steps: {
-                    include: {
-                        part: {
-                            select: { id: true, partNumber: true, name: true },
-                        },
-                    },
+                part: {
+                    select: { id: true, partNumber: true, name: true },
                 },
+                steps: true,
             },
         })
 

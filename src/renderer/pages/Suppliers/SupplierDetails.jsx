@@ -5,7 +5,10 @@ import MainLayout from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Edit, Mail, Phone, Globe, MapPin } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowLeft, Edit, Mail, Phone, Globe, MapPin, Plus, Trash2, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function SupplierDetails() {
@@ -14,9 +17,18 @@ export default function SupplierDetails() {
     const { t } = useTranslation()
     const [supplier, setSupplier] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [availableParts, setAvailableParts] = useState([])
+    const [showAssignDialog, setShowAssignDialog] = useState(false)
+    const [assignFormData, setAssignFormData] = useState({
+        partId: '',
+        supplierSKU: '',
+        unitPrice: '',
+        leadTimeDays: ''
+    })
 
     useEffect(() => {
         loadSupplier()
+        loadAvailableParts()
     }, [id])
 
     const loadSupplier = async () => {
@@ -33,6 +45,62 @@ export default function SupplierDetails() {
             toast.error(t('messages.loadFailed'))
         } finally {
             setLoading(false)
+        }
+    }
+
+    const loadAvailableParts = async () => {
+        try {
+            const result = await window.api.getAllParts({})
+            if (result.success) {
+                setAvailableParts(result.parts)
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    const handleAssignPart = async () => {
+        try {
+            if (!assignFormData.partId) return
+
+            const result = await window.api.assignPartToSupplier(
+                id,
+                assignFormData.partId,
+                {
+                    supplierSKU: assignFormData.supplierSKU,
+                    unitPrice: assignFormData.unitPrice ? parseFloat(assignFormData.unitPrice) : null,
+                    leadTimeDays: assignFormData.leadTimeDays ? parseInt(assignFormData.leadTimeDays) : null
+                }
+            )
+
+            if (result.success) {
+                toast.success(t('suppliers.partAssigned'))
+                setShowAssignDialog(false)
+                setAssignFormData({ partId: '', supplierSKU: '', unitPrice: '', leadTimeDays: '' })
+                loadSupplier()
+            } else {
+                toast.error(result.error || t('messages.saveFailed'))
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error(t('messages.saveFailed'))
+        }
+    }
+
+    const handleRemovePart = async (partId) => {
+        if (!confirm(t('common.confirmDelete'))) return
+
+        try {
+            const result = await window.api.removePartFromSupplier(id, partId)
+            if (result.success) {
+                toast.success(t('suppliers.partRemoved'))
+                loadSupplier()
+            } else {
+                toast.error(result.error || t('messages.deleteFailed'))
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error(t('messages.deleteFailed'))
         }
     }
 
@@ -146,31 +214,49 @@ export default function SupplierDetails() {
                 {/* Supplied Parts */}
                 <Card className="glass glass-border">
                     <CardHeader>
-                        <CardTitle>{t('suppliers.suppliedParts')}</CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>{t('suppliers.suppliedParts')}</CardTitle>
+                            <Button onClick={() => setShowAssignDialog(true)} size="sm">
+                                <Plus className="mr-2 h-4 w-4" />
+                                {t('suppliers.assignPart')}
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {supplier.supplierParts && supplier.supplierParts.length > 0 ? (
                             <div className="space-y-3">
                                 {supplier.supplierParts.map((sp) => (
-                                    <div key={sp.id} className="flex items-center justify-between p-4 glass rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
-                                        onClick={() => navigate(`/inventory/${sp.part?.id}`)}>
-                                        <div>
-                                            <p className="font-semibold">{sp.part?.name}</p>
+                                    <div key={sp.id} className="flex items-center justify-between p-4 glass rounded-lg hover:bg-white/5 transition-colors">
+                                        <div className="cursor-pointer flex-1" onClick={() => navigate(`/inventory/${sp.part?.id}`)}>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold">{sp.part?.name}</p>
+                                                <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
                                             <p className="text-sm text-muted-foreground font-mono">{sp.part?.partNumber}</p>
                                             {sp.supplierSKU && (
                                                 <p className="text-xs text-muted-foreground mt-1">SKU: {sp.supplierSKU}</p>
                                             )}
                                         </div>
-                                        <div className="text-right">
-                                            {sp.unitPrice && (
-                                                <p className="font-mono font-bold">${sp.unitPrice} {sp.currency || 'USD'}</p>
-                                            )}
-                                            {sp.leadTimeDays && (
-                                                <p className="text-sm text-muted-foreground">{sp.leadTimeDays} {t('suppliers.daysLeadTime')}</p>
-                                            )}
-                                            {sp.minOrderQty && sp.minOrderQty > 1 && (
-                                                <p className="text-xs text-muted-foreground">{t('suppliers.minOrder')}: {sp.minOrderQty}</p>
-                                            )}
+                                        <div className="text-right flex items-center gap-4">
+                                            <div>
+                                                {sp.unitPrice && (
+                                                    <p className="font-mono font-bold">${sp.unitPrice} {sp.currency || 'USD'}</p>
+                                                )}
+                                                {sp.leadTimeDays && (
+                                                    <p className="text-sm text-muted-foreground">{sp.leadTimeDays} {t('suppliers.daysLeadTime')}</p>
+                                                )}
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleRemovePart(sp.partId)
+                                                }}
+                                                className="hover:bg-red-500/10 hover:text-red-500"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
@@ -181,6 +267,75 @@ export default function SupplierDetails() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Assign Part Dialog */}
+            <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('suppliers.assignPart')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">{t('inventory.selectPart')}</label>
+                            <Select
+                                value={assignFormData.partId}
+                                onValueChange={(val) => setAssignFormData({ ...assignFormData, partId: val })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={t('inventory.selectPart')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableParts.map((p) => (
+                                        <SelectItem key={p.id} value={p.id}>
+                                            <span className="font-mono mr-2 text-muted-foreground">{p.partNumber}</span>
+                                            {p.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">{t('suppliers.sku')}</label>
+                            <Input
+                                value={assignFormData.supplierSKU}
+                                onChange={(e) => setAssignFormData({ ...assignFormData, supplierSKU: e.target.value })}
+                                placeholder="SUP-12345"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">{t('suppliers.price')}</label>
+                                <Input
+                                    type="number"
+                                    value={assignFormData.unitPrice}
+                                    onChange={(e) => setAssignFormData({ ...assignFormData, unitPrice: e.target.value })}
+                                    placeholder="0.00"
+                                    min="0"
+                                    step="0.01"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">{t('suppliers.leadTime')}</label>
+                                <Input
+                                    type="number"
+                                    value={assignFormData.leadTimeDays}
+                                    onChange={(e) => setAssignFormData({ ...assignFormData, leadTimeDays: e.target.value })}
+                                    placeholder={t('suppliers.days')}
+                                    min="0"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button onClick={handleAssignPart} disabled={!assignFormData.partId}>
+                            {t('common.save')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </MainLayout>
     )
 }
